@@ -34,7 +34,7 @@
   .name-input::placeholder { color: #777; }
   .name-input:focus { border-color: #e94560; box-shadow: 0 0 12px rgba(233,69,96,0.3); }
 
-  .category { max-width: 900px; margin: 0 auto 28px auto; }
+  .category { max-width: 900px; margin: 0 auto 28px auto; transition: opacity 0.3s, filter 0.3s; }
   .category-title {
     font-size: 1.3rem;
     font-weight: 700;
@@ -84,6 +84,28 @@
   .item-emoji { font-size: 2.5rem; display: block; margin-bottom: 8px; }
   .item-name { font-size: 0.9rem; font-weight: 600; color: #ddd; }
   .item-card.selected .item-name { color: #fff; }
+
+  /* Disabled / locked state for categories */
+  .category.locked {
+    opacity: 0.25;
+    filter: grayscale(80%);
+    pointer-events: none;
+    position: relative;
+  }
+  .category.locked::after {
+    content: '🔒 Not available with this selection';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.75);
+    color: #aaa;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    z-index: 10;
+  }
 
   /* Preview hint for roll/nigiri cards */
   .has-preview .preview-hint {
@@ -311,7 +333,7 @@
 <body>
 
 <h1>🍣 Sunday Sushi with Devin on Saturday</h1>
-<p class="subtitle">Pick your roll, customize your ingredients, then submit!</p>
+<p class="subtitle">Pick your roll OR nigiri OR build a custom roll, then add toppings & sauces!</p>
 
 <div class="name-section">
   <input type="text" class="name-input" id="studentName" placeholder="Enter your name...">
@@ -595,6 +617,61 @@ function selectFromPreview() {
 }
 
 // =============================================
+// SECTION LOCKING LOGIC
+// =============================================
+function updateLockedSections() {
+  const hasRoll = Object.values(selections).some(s => s.key === 'rolls');
+  const hasNigiri = Object.values(selections).some(s => s.key === 'nigiri');
+  const hasWrap = Object.values(selections).some(s => s.key === 'wrap');
+  const hasProtein = Object.values(selections).some(s => s.key === 'proteins');
+  const hasVeggie = Object.values(selections).some(s => s.key === 'vegetables');
+
+  // Get all category elements
+  const catRolls = document.getElementById('cat-rolls');
+  const catNigiri = document.getElementById('cat-nigiri');
+  const catWrap = document.getElementById('cat-wrap');
+  const catProteins = document.getElementById('cat-proteins');
+  const catVeggies = document.getElementById('cat-veggies');
+
+  // Reset all locks first
+  [catRolls, catNigiri, catWrap, catProteins, catVeggies].forEach(el => el.classList.remove('locked'));
+
+  if (hasRoll) {
+    // Roll selected: lock nigiri, wrap, proteins, veggies
+    catNigiri.classList.add('locked');
+    catWrap.classList.add('locked');
+    catProteins.classList.add('locked');
+    catVeggies.classList.add('locked');
+  } else if (hasNigiri) {
+    // Nigiri selected: lock rolls, wrap, proteins, veggies
+    catRolls.classList.add('locked');
+    catWrap.classList.add('locked');
+    catProteins.classList.add('locked');
+    catVeggies.classList.add('locked');
+  } else if (hasWrap || hasProtein || hasVeggie) {
+    // Custom build started: lock rolls and nigiri
+    catRolls.classList.add('locked');
+    catNigiri.classList.add('locked');
+  }
+
+  // Toppings and Sauces are NEVER locked
+}
+
+// Clear selections from locked categories
+function clearLockedSelections() {
+  const lockedCategories = document.querySelectorAll('.category.locked');
+  lockedCategories.forEach(cat => {
+    cat.querySelectorAll('.item-card.selected').forEach(card => {
+      const key = card.dataset.key;
+      const value = card.dataset.value;
+      const id = key + '::' + value;
+      card.classList.remove('selected');
+      delete selections[id];
+    });
+  });
+}
+
+// =============================================
 // SELECTION LOGIC
 // =============================================
 let selections = {};
@@ -631,6 +708,10 @@ function selectItem(card) {
       }
     }
   }
+
+  // Update locks, clear anything in newly locked sections, then update summary
+  updateLockedSections();
+  clearLockedSelections();
   updateSummary();
 }
 
@@ -650,6 +731,7 @@ function clearAll() {
   selections = {};
   document.querySelectorAll('.item-card.selected').forEach(c => c.classList.remove('selected'));
   document.getElementById('notes').value = '';
+  updateLockedSections();
   updateSummary();
 }
 
@@ -695,12 +777,9 @@ async function submitOrder() {
   document.getElementById('confirmModal').classList.add('active');
 
   try {
-    // Build URL with parameters to avoid no-cors body stripping
     const params = new URLSearchParams(order).toString();
     const url = GOOGLE_SCRIPT_URL + '?' + params;
-
     await fetch(url, { method: 'GET', mode: 'no-cors' });
-
     statusMsg.textContent = '✅ Sent to the order sheet!';
   } catch (err) {
     statusMsg.textContent = '⚠️ Could not reach sheet, but your order is shown above.';
