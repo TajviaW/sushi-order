@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍣 Sunday Sushi with Devin on Saturday</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    color: #fff;
+    min-height: 100vh;
+    padding: 20px;
+    padding-bottom: 200px;
+  }
+  h1 { text-align: center; font-size: 2rem; margin-bottom: 5px; color: #ff6b6b; }
+  .subtitle { text-align: center; font-size: 1rem; color: #aaa; margin-bottom: 25px; }
+
+  .name-section { text-align: center; margin-bottom: 25px; }
+  .name-input {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid #333;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    width: 320px;
+    max-width: 90%;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .name-input::placeholder { color: #777; }
+  .name-input:focus { border-color: #e94560; box-shadow: 0 0 12px rgba(233,69,96,0.3); }
+
+  .category { max-width: 900px; margin: 0 auto 28px auto; }
+  .category-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e94560;
+    display: inline-block;
+  }
+  .category-hint {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 400;
+    margin-left: 10px;
+  }
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .item-card {
+    background: rgba(255,255,255,0.06);
+    border: 3px solid transparent;
+    border-radius: 16px;
+    padding: 16px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+  }
+  .item-card:active { transform: scale(0.95); }
+  .item-card.selected {
+    border-color: #e94560;
+    background: rgba(233,69,96,0.15);
+    box-shadow: 0 0 20px rgba(233,69,96,0.25);
+  }
+  .item-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 1.1rem;
+    color: #e94560;
+    font-weight: bold;
+  }
+  .item-emoji { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+  .item-name { font-size: 0.9rem; font-weight: 600; color: #ddd; }
+  .item-card.selected .item-name { color: #fff; }
+
+  /* Preview hint for roll/nigiri cards */
+  .has-preview .preview-hint {
+    display: block;
+    font-size: 0.65rem;
+    color: #888;
+    margin-top: 6px;
+  }
+
+  /* Info button on cards with previews */
+  .info-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #aaa;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.2s;
+  }
+  .info-btn:hover, .info-btn:active {
+    background: rgba(233,69,96,0.4);
+    color: #fff;
+    border-color: #e94560;
+  }
+
+  /* Preview Modal */
+  .preview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 900;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .preview-overlay.active { display: flex; }
+  .preview-box {
+    background: linear-gradient(135deg, #16213e, #1a1a2e);
+    border: 2px solid #e94560;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    max-width: 380px;
+    width: 100%;
+    animation: popIn 0.25s ease;
+  }
+  .preview-box img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 14px;
+    margin-bottom: 15px;
+    background: #111;
+  }
+  .preview-box h3 {
+    color: #ff6b6b;
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+  }
+  .preview-box p {
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .preview-box .preview-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .preview-box .preview-select-btn {
+    background: linear-gradient(135deg, #e94560, #c23152);
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  .preview-box .preview-close-btn {
+    background: rgba(255,255,255,0.1);
+    color: #ccc;
+    border: 1px solid #555;
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  /* Summary Bar */
+  .summary-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15,15,35,0.97);
+    border-top: 2px solid #e94560;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .summary-left { flex: 1; margin-right: 15px; overflow-y: auto; max-height: 100px; }
+  .summary-count { color: #e94560; font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .summary-items span {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    padding: 3px 9px;
+    border-radius: 10px;
+    margin: 2px 3px;
+    font-size: 0.78rem;
+    color: #ccc;
+  }
+  .clear-btn {
+    background: none;
+    border: 1px solid #555;
+    color: #999;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .submit-btn {
+    background: linear-gradient(135deg, #e94560, #c23152);
+    color: #fff;
+    border: none;
+    padding: 16px 35px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+  }
+  .submit-btn:active { transform: scale(0.97); }
+  .submit-btn:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
+
+  /* Notes */
+  .notes-section { max-width: 900px; margin: 0 auto 28px auto; }
+  .notes-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 2px solid #333;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+  }
+  .notes-input::placeholder { color: #666; }
+  .notes-input:focus { border-color: #e94560; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: linear-gradient(135deg, #16213e, #1a1a2e);
+    border: 2px solid #e94560;
+    border-radius: 20px;
+    padding: 35px;
+    text-align: center;
+    max-width: 460px;
+    width: 100%;
+    animation: popIn 0.3s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal h2 { color: #e94560; margin-bottom: 15px; font-size: 1.5rem; }
+  .modal .order-detail {
+    text-align: left;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 15px;
+    font-size: 0.92rem;
+    line-height: 1.9;
+  }
+  .modal .order-detail .lbl { color: #e94560; font-weight: 700; }
+  .modal .status-msg { font-size: 0.85rem; color: #4ecdc4; margin-bottom: 15px; }
+  .modal .status-msg.error { color: #ff6b6b; }
+  .modal-close-btn {
+    background: #e94560;
+    color: #fff;
+    border: none;
+    padding: 14px 40px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>🍣 Sunday Sushi with Devin on Saturday</h1>
+<p class="subtitle">Pick your rolls, customize your ingredients, then submit!</p>
+
+<div class="name-section">
+  <input type="text" class="name-input" id="studentName" placeholder="Enter your name...">
+</div>
+
+<!-- Sushi Rolls -->
+<div class="category" id="cat-rolls">
+  <div class="category-title">🍱 Sushi Rolls <span class="category-hint">Pick as many as you want · Tap ⓘ to preview</span></div>
+  <div class="items-grid" data-type="multi" data-max="99" id="rollsGrid"></div>
+</div>
+
+<!-- Nigiri -->
+<div class="category" id="cat-nigiri">
+  <div class="category-title">🐟 Nigiri <span class="category-hint">Pick as many as you want · Tap ⓘ to preview</span></div>
+  <div class="items-grid" data-type="multi" data-max="99" id="nigiriGrid"></div>
+</div>
+
+<!-- Wrap -->
+<div class="category" id="cat-wrap">
+  <div class="category-title">🌿 Wrap <span class="category-hint">Pick 1</span></div>
+  <div class="items-grid" data-type="single">
+    <div class="item-card" data-key="wrap" data-value="Nori (Seaweed)" onclick="selectItem(this)"><span class="item-emoji">🟢</span><span class="item-name">Nori (Seaweed)</span></div>
+    <div class="item-card" data-key="wrap" data-value="Soy Paper" onclick="selectItem(this)"><span class="item-emoji">📄</span><span class="item-name">Soy Paper</span></div>
+    <div class="item-card" data-key="wrap" data-value="Cucumber Wrap" onclick="selectItem(this)"><span class="item-emoji">🥒</span><span class="item-name">Cucumber Wrap</span></div>
+    <div class="item-card" data-key="wrap" data-value="Rice Outside (Uramaki)" onclick="selectItem(this)"><span class="item-emoji">⚪</span><span class="item-name">Rice Outside</span></div>
+  </div>
+</div>
+
+<!-- Proteins -->
+<div class="category" id="cat-proteins">
+  <div class="category-title">🥩 Proteins <span class="category-hint">Pick up to 3</span></div>
+  <div class="items-grid" data-type="multi" data-max="3">
+    <div class="item-card" data-key="proteins" data-value="Salmon" onclick="selectItem(this)"><span class="item-emoji">🍣</span><span class="item-name">Salmon</span></div>
+    <div class="item-card" data-key="proteins" data-value="Ahi Tuna" onclick="selectItem(this)"><span class="item-emoji">🐟</span><span class="item-name">Ahi Tuna</span></div>
+    <div class="item-card" data-key="proteins" data-value="Smoked Salmon" onclick="selectItem(this)"><span class="item-emoji">🔥</span><span class="item-name">Smoked Salmon</span></div>
+    <div class="item-card" data-key="proteins" data-value="Shrimp Tempura" onclick="selectItem(this)"><span class="item-emoji">🍤</span><span class="item-name">Shrimp Tempura</span></div>
+    <div class="item-card" data-key="proteins" data-value="Crab Stick" onclick="selectItem(this)"><span class="item-emoji">🦀</span><span class="item-name">Crab Stick</span></div>
+    <div class="item-card" data-key="proteins" data-value="Eel (Unagi)" onclick="selectItem(this)"><span class="item-emoji">🐍</span><span class="item-name">Eel (Unagi)</span></div>
+    <div class="item-card" data-key="proteins" data-value="Tofu" onclick="selectItem(this)"><span class="item-emoji">🧈</span><span class="item-name">Tofu</span></div>
+  </div>
+</div>
+
+<!-- Vegetables & Fruits -->
+<div class="category" id="cat-veggies">
+  <div class="category-title">🥑 Vegetables & Fruits <span class="category-hint">Pick up to 4</span></div>
+  <div class="items-grid" data-type="multi" data-max="4">
+    <div class="item-card" data-key="vegetables" data-value="Avocado" onclick="selectItem(this)"><span class="item-emoji">🥑</span><span class="item-name">Avocado</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Cucumber" onclick="selectItem(this)"><span class="item-emoji">🥒</span><span class="item-name">Cucumber</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Cream Cheese" onclick="selectItem(this)"><span class="item-emoji">🧀</span><span class="item-name">Cream Cheese</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Carrot" onclick="selectItem(this)"><span class="item-emoji">🥕</span><span class="item-name">Carrot</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Asparagus" onclick="selectItem(this)"><span class="item-emoji">🌿</span><span class="item-name">Asparagus</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Mango" onclick="selectItem(this)"><span class="item-emoji">🥭</span><span class="item-name">Mango</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Jalapeño" onclick="selectItem(this)"><span class="item-emoji">🌶️</span><span class="item-name">Jalapeño</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Sweet Potato" onclick="selectItem(this)"><span class="item-emoji">🍠</span><span class="item-name">Sweet Potato</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Pickled Radish" onclick="selectItem(this)"><span class="item-emoji">🩷</span><span class="item-name">Pickled Radish</span></div>
+    <div class="item-card" data-key="vegetables" data-value="Scallions" onclick="selectItem(this)"><span class="item-emoji">🧅</span><span class="item-name">Scallions</span></div>
+  </div>
+</div>
+
+<!-- Toppings & Enhancements -->
+<div class="category" id="cat-toppings">
+  <div class="category-title">✨ Toppings & Enhancements <span class="category-hint">Pick up to 4</span></div>
+  <div class="items-grid" data-type="multi" data-max="4">
+    <div class="item-card" data-key="toppings" data-value="Sesame Seeds" onclick="selectItem(this)"><span class="item-emoji">⚪</span><span class="item-name">Sesame Seeds</span></div>
+    <div class="item-card" data-key="toppings" data-value="Fish Eggs (Tobiko)" onclick="selectItem(this)"><span class="item-emoji">🟠</span><span class="item-name">Fish Eggs</span></div>
+    <div class="item-card" data-key="toppings" data-value="Crispy Onion" onclick="selectItem(this)"><span class="item-emoji">🧅</span><span class="item-name">Crispy Onion</span></div>
+    <div class="item-card" data-key="toppings" data-value="Crunchy Bits (Tempura Flakes)" onclick="selectItem(this)"><span class="item-emoji">✨</span><span class="item-name">Crunchy Bits</span></div>
+    <div class="item-card" data-key="toppings" data-value="Green Onion" onclick="selectItem(this)"><span class="item-emoji">🌱</span><span class="item-name">Green Onion</span></div>
+    <div class="item-card" data-key="toppings" data-value="Furikake" onclick="selectItem(this)"><span class="item-emoji">🌈</span><span class="item-name">Furikake</span></div>
+  </div>
+</div>
+
+<!-- Sauces -->
+<div class="category" id="cat-sauces">
+  <div class="category-title">🥫 Sauces <span class="category-hint">Pick up to 2</span></div>
+  <div class="items-grid" data-type="multi" data-max="2">
+    <div class="item-card" data-key="sauces" data-value="Spicy Mayo" onclick="selectItem(this)"><span class="item-emoji">🌶️</span><span class="item-name">Spicy Mayo</span></div>
+    <div class="item-card" data-key="sauces" data-value="Eel Sauce" onclick="selectItem(this)"><span class="item-emoji">🍯</span><span class="item-name">Eel Sauce</span></div>
+    <div class="item-card" data-key="sauces" data-value="Soy Sauce" onclick="selectItem(this)"><span class="item-emoji">🫗</span><span class="item-name">Soy Sauce</span></div>
+    <div class="item-card" data-key="sauces" data-value="Sriracha" onclick="selectItem(this)"><span class="item-emoji">🔥</span><span class="item-name">Sriracha</span></div>
+    <div class="item-card" data-key="sauces" data-value="Ponzu" onclick="selectItem(this)"><span class="item-emoji">🍋</span><span class="item-name">Ponzu</span></div>
+    <div class="item-card" data-key="sauces" data-value="Wasabi" onclick="selectItem(this)"><span class="item-emoji">🟩</span><span class="item-name">Wasabi</span></div>
+  </div>
+</div>
+
+<!-- Special Requests -->
+<div class="notes-section">
+  <div class="category-title">📝 Special Requests</div>
+  <textarea class="notes-input" id="notes" placeholder="Allergies, extra wasabi, no spice, etc."></textarea>
+</div>
+
+<!-- Summary Bar -->
+<div class="summary-bar">
+  <div class="summary-left">
+    <div class="summary-count" id="summaryCount">0 items selected</div>
+    <div class="summary-items" id="summaryItems"></div>
+  </div>
+  <button class="clear-btn" onclick="clearAll()">Clear</button>
+  <button class="submit-btn" id="submitBtn" disabled onclick="submitOrder()">🍣 Submit</button>
+</div>
+
+<!-- Preview Modal -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-box">
+    <img id="previewImg" src="" alt="Roll preview">
+    <h3 id="previewTitle"></h3>
+    <p id="previewDesc"></p>
+    <div class="preview-btns">
+      <button class="preview-close-btn" onclick="closePreview()">Close</button>
+      <button class="preview-select-btn" id="previewSelectBtn" onclick="selectFromPreview()">Add to Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h2>🎉 Order Submitted!</h2>
+    <div class="order-detail" id="orderDetail"></div>
+    <div class="status-msg" id="statusMsg"></div>
+    <button class="modal-close-btn" onclick="closeModal()">Build Another Roll</button>
+  </div>
+</div>
+
+<script>
+// =============================================
+// PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+// =============================================
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRvns7KvWN_X2zvqT6_3-auA47rTI_QZEr0B9wB3VnRhSSvWt7ujxaQj9ubEsNzAdF/exec";
+
+// =============================================
+// ROLL & NIGIRI DATA WITH IMAGES
+// =============================================
+const rollData = [
+  {
+    value: "California Roll",
+    emoji: "🦀",
+    image: "https://norecipes.com/wp-content/uploads/2019/12/best-california-roll-004-500x375.jpg",
+    desc: "Crab stick, avocado, and cucumber wrapped in rice and nori. A classic crowd-pleaser!"
+  },
+  {
+    value: "Shrimp Tempura Roll",
+    emoji: "🍤",
+    image: "https://www.mashed.com/img/gallery/shrimp-tempura-roll-what-you-should-know-before-ordering/l-intro-1628971551.jpg",
+    desc: "Crispy shrimp tempura with avocado and cucumber. Crunchy and satisfying!"
+  },
+  {
+    value: "Spicy Salmon Roll",
+    emoji: "🌶️",
+    image: "https://40aprons.com/wp-content/uploads/2018/05/whole30-sushi-paleo-low-carb-4.jpg",
+    desc: "Fresh salmon mixed with spicy mayo, rolled with cucumber. A kick of heat!"
+  },
+  {
+    value: "Philadelphia Roll",
+    emoji: "🧀",
+    image: "https://www.craftycookbook.com/wp-content/uploads/2022/05/philly-roll-1200.jpg",
+    desc: "Smoked salmon, cream cheese, and cucumber. Rich and creamy!"
+  },
+  {
+    value: "Crunchy Onion Roll",
+    emoji: "🧅",
+    image: "https://www.flypeachpie.com/wp-content/uploads/2018/07/31203735_1834072566659465_7259088049907171328_n.jpg",
+    desc: "Crab stick and avocado topped with crispy fried onion. Maximum crunch!"
+  },
+  {
+    value: "Dragon Roll",
+    emoji: "🐉",
+    image: "https://www.justonecookbook.com/wp-content/uploads/2020/06/Dragon-Roll-0290-III.jpg",
+    desc: "Eel and cucumber inside, sliced avocado draped on top with eel sauce. Stunning presentation!"
+  },
+  {
+    value: "Rainbow Roll",
+    emoji: "🌈",
+    image: "https://popmenucloud.com/cdn-cgi/image/width=1920,height=1920,format=auto,fit=scale-down/posfekul/524c0731-035d-4499-b98b-09e51d7d243a.jpg",
+    desc: "California roll topped with assorted sliced fish — salmon, tuna, and more. Beautiful and delicious!"
+  },
+  {
+    value: "Veggie Avocado Roll",
+    emoji: "🥑",
+    image: "https://www.kayscleaneats.com/wp-content/uploads/2020/05/dsc_0016.jpg",
+    desc: "Avocado, cucumber, carrot, and asparagus. Fresh, light, and fully plant-based!"
+  },
+  {
+    value: "Tofu Roll",
+    emoji: "🧈",
+    image: "https://www.thefieryvegetarian.com/wp-content/uploads/2024/05/tofu-sushi-roll.jpg",
+    desc: "Seasoned tofu with avocado and cucumber. A delicious vegetarian option!"
+  }
+];
+
+const nigiriData = [
+  {
+    value: "Salmon Nigiri",
+    emoji: "🍣",
+    image: "https://pinchandswirl.com/wp-content/uploads/2025/08/Salmon-Nigiri-Featured-Image.jpg",
+    desc: "A slice of fresh, buttery salmon over pressed sushi rice. Simple perfection!"
+  },
+  {
+    value: "Ahi Nigiri",
+    emoji: "🐟",
+    image: "https://res.cloudinary.com/hz3gmuqw6/image/upload/v1637267741/recipes/DSCF1821_6196b91c23f3d.jpg",
+    desc: "Fresh ahi tuna over sushi rice. Clean, rich flavor with a melt-in-your-mouth texture!"
+  }
+];
+
+// =============================================
+// BUILD ROLL & NIGIRI CARDS
+// =============================================
+let currentPreviewValue = null;
+let currentPreviewKey = null;
+
+function buildPreviewCards(containerId, dataArray, keyName) {
+  const grid = document.getElementById(containerId);
+  dataArray.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card has-preview';
+    card.dataset.key = keyName;
+    card.dataset.value = item.value;
+    card.onclick = function() { selectItem(this); };
+    card.innerHTML = `
+      <div class="info-btn" onclick="event.stopPropagation(); showPreview('${keyName}', '${item.value}')">ⓘ</div>
+      <span class="item-emoji">${item.emoji}</span>
+      <span class="item-name">${item.value}</span>
+      <span class="preview-hint">Tap ⓘ for photo</span>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+buildPreviewCards('rollsGrid', rollData, 'rolls');
+buildPreviewCards('nigiriGrid', nigiriData, 'nigiri');
+
+// =============================================
+// PREVIEW FUNCTIONS
+// =============================================
+function getItemData(key, value) {
+  const source = key === 'rolls' ? rollData : nigiriData;
+  return source.find(i => i.value === value);
+}
+
+function showPreview(key, value) {
+  const item = getItemData(key, value);
+  if (!item) return;
+
+  currentPreviewKey = key;
+  currentPreviewValue = value;
+
+  document.getElementById('previewImg').src = item.image;
+  document.getElementById('previewTitle').textContent = item.value;
+  document.getElementById('previewDesc').textContent = item.desc;
+
+  const id = key + '::' + value;
+  const isSelected = !!selections[id];
+  const btn = document.getElementById('previewSelectBtn');
+  btn.textContent = isSelected ? '✓ Already Added' : 'Add to Order';
+  btn.style.opacity = isSelected ? '0.6' : '1';
+
+  document.getElementById('previewOverlay').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('previewOverlay').classList.remove('active');
+  currentPreviewKey = null;
+  currentPreviewValue = null;
+}
+
+function selectFromPreview() {
+  if (!currentPreviewKey || !currentPreviewValue) return;
+  const id = currentPreviewKey + '::' + currentPreviewValue;
+
+  if (!selections[id]) {
+    // Find the card and select it
+    const card = document.querySelector(`.item-card[data-key="${currentPreviewKey}"][data-value="${currentPreviewValue}"]`);
+    if (card) selectItem(card);
+  }
+
+  const btn = document.getElementById('previewSelectBtn');
+  btn.textContent = '✓ Added!';
+  btn.style.opacity = '0.6';
+
+  setTimeout(() => closePreview(), 600);
+}
+
+// =============================================
+// SELECTION LOGIC
+// =============================================
+let selections = {};
+
+function selectItem(card) {
+  const grid = card.closest('.items-grid');
+  const type = grid.dataset.type;
+  const max = parseInt(grid.dataset.max) || 1;
+  const key = card.dataset.key;
+  const value = card.dataset.value;
+  const id = key + '::' + value;
+
+  if (type === 'single') {
+    grid.querySelectorAll('.item-card').forEach(c => {
+      const sibId = c.dataset.key + '::' + c.dataset.value;
+      c.classList.remove('selected');
+      delete selections[sibId];
+    });
+    card.classList.add('selected');
+    selections[id] = { key, value };
+  } else {
+    if (card.classList.contains('selected')) {
+      card.classList.remove('selected');
+      delete selections[id];
+    } else {
+      const count = Object.values(selections).filter(s => s.key === key).length;
+      if (count < max) {
+        card.classList.add('selected');
+        selections[id] = { key, value };
+      } else {
+        card.style.animation = 'none';
+        card.offsetHeight;
+        card.style.animation = 'shake 0.3s ease';
+      }
+    }
+  }
+  updateSummary();
+}
+
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }`;
+document.head.appendChild(shakeStyle);
+
+function updateSummary() {
+  const keys = Object.keys(selections);
+  const count = keys.length;
+  document.getElementById('summaryCount').textContent = `${count} item${count !== 1 ? 's' : ''} selected`;
+  document.getElementById('summaryItems').innerHTML = keys.map(k => `<span>${selections[k].value}</span>`).join('');
+  document.getElementById('submitBtn').disabled = count === 0;
+}
+
+function clearAll() {
+  selections = {};
+  document.querySelectorAll('.item-card.selected').forEach(c => c.classList.remove('selected'));
+  document.getElementById('notes').value = '';
+  updateSummary();
+}
+
+function gatherByKey(key) {
+  return Object.values(selections).filter(s => s.key === key).map(s => s.value).join(', ') || 'None';
+}
+
+// =============================================
+// SUBMIT ORDER
+// =============================================
+async function submitOrder() {
+  const name = document.getElementById('studentName').value.trim();
+  if (!name) { alert('Please enter your name!'); return; }
+  if (Object.keys(selections).length === 0) { alert('Please pick at least one item!'); return; }
+
+  const order = {
+    name: name,
+    rolls: gatherByKey('rolls'),
+    nigiri: gatherByKey('nigiri'),
+    wrap: gatherByKey('wrap'),
+    proteins: gatherByKey('proteins'),
+    vegetables: gatherByKey('vegetables'),
+    toppings: gatherByKey('toppings'),
+    sauces: gatherByKey('sauces'),
+    notes: document.getElementById('notes').value.trim() || 'None'
+  };
+
+  document.getElementById('orderDetail').innerHTML = `
+    <span class="lbl">Name:</span> ${order.name}<br>
+    <span class="lbl">Rolls:</span> ${order.rolls}<br>
+    <span class="lbl">Nigiri:</span> ${order.nigiri}<br>
+    <span class="lbl">Wrap:</span> ${order.wrap}<br>
+    <span class="lbl">Proteins:</span> ${order.proteins}<br>
+    <span class="lbl">Vegetables:</span> ${order.vegetables}<br>
+    <span class="lbl">Toppings:</span> ${order.toppings}<br>
+    <span class="lbl">Sauces:</span> ${order.sauces}<br>
+    <span class="lbl">Notes:</span> ${order.notes}
+  `;
+
+  const statusMsg = document.getElementById('statusMsg');
+  statusMsg.textContent = '⏳ Sending to order sheet...';
+  statusMsg.className = 'status-msg';
+  document.getElementById('confirmModal').classList.add('active');
+
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    });
+    statusMsg.textContent = '✅ Sent to the order sheet!';
+  } catch (err) {
+    statusMsg.textContent = '⚠️ Could not reach sheet, but your order is shown above.';
+    statusMsg.className = 'status-msg error';
+    console.error(err);
+  }
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('active');
+  clearAll();
+  document.getElementById('studentName').value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
