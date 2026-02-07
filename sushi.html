@@ -683,13 +683,20 @@ function selectItem(card) {
   const id = key + '::' + value;
 
   if (type === 'single') {
-    grid.querySelectorAll('.item-card').forEach(c => {
-      const sibId = c.dataset.key + '::' + c.dataset.value;
-      c.classList.remove('selected');
-      delete selections[sibId];
-    });
-    card.classList.add('selected');
-    selections[id] = { key, value };
+    // If already selected, deselect it (toggle off)
+    if (card.classList.contains('selected')) {
+      card.classList.remove('selected');
+      delete selections[id];
+    } else {
+      // Deselect siblings first
+      grid.querySelectorAll('.item-card').forEach(c => {
+        const sibId = c.dataset.key + '::' + c.dataset.value;
+        c.classList.remove('selected');
+        delete selections[sibId];
+      });
+      card.classList.add('selected');
+      selections[id] = { key, value };
+    }
   } else {
     if (card.classList.contains('selected')) {
       card.classList.remove('selected');
